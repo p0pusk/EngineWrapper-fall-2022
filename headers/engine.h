@@ -1,30 +1,38 @@
 #include <iostream>
+#include <map>
 #include <stdexcept>
+#include <string>
 #include <unordered_map>
 
 #include "wrapper.h"
 
-using vectorArgs = std::vector<std::pair<std::string, int>>;
-
 class Engine {
  public:
-  void registerCommand(Wrapper const& wrapper, std::string const& command) {
+  void RegisterCommand(Wrapper const& wrapper, std::string const& command) {
     if (command == "") {
-      throw std::runtime_error("invalid command name");
+      throw std::runtime_error("[Engine]: Exception, empty command name");
     }
-    if (wrappersMap.contains(command)) {
-      throw std::runtime_error("such command already exists");
+    if (wrappers_map.contains(command)) {
+      throw std::runtime_error("[Engine]: Exception, command already exists");
     }
-    wrappersMap.insert({command, wrapper});
+    wrappers_map.insert({command, wrapper});
   }
 
-  int execute(std::string const& command, vectorArgs const& args) {
-    if (!wrappersMap.contains(command)) {
-      throw std::runtime_error("no such command");
+  int Execute(std::string const& command,
+              std::map<std::string, int> const& args) {
+    if (!wrappers_map.contains(command)) {
+      throw std::runtime_error("[Engine]: Exception, command not registered");
     }
-    return wrappersMap.at(command).run(args);
+    return wrappers_map.at(command).Run(args);
+  }
+
+  int Execute(std::string const& command) {
+    if (!wrappers_map.contains(command)) {
+      throw std::runtime_error("[Engine]: Exception, command not registered");
+    }
+    return wrappers_map.at(command).Run();
   }
 
  private:
-  std::unordered_map<std::string, Wrapper> wrappersMap;
+  std::unordered_map<std::string, Wrapper> wrappers_map;
 };

@@ -5,57 +5,57 @@
 
 int main() {
   Engine engine;
-  Subject* sub = new Subject;
-  Wrapper wrapper1(sub, &Subject::foo, {{"first", 1}, {"second", 2}});
+  Subject1* sub = new Subject1;
+  Wrapper wrapper1(sub, &Subject1::Foo, {{"first", 1}, {"second", 2}});
   Subject2* sub2 = new Subject2;
-  Wrapper wrapper2(sub2, &Subject2::foo2,
-                   {{"firstStr", 5}, {"secondStr", 6}, {"thirdStr", 7}});
+  Wrapper wrapper2(sub2, &Subject2::Foo,
+                   {{"one", 5}, {"two", 6}, {"three", 7}});
 
   // OK
   try {
-    engine.registerCommand(wrapper1, "command1");
+    engine.RegisterCommand(wrapper1, "command1");
   } catch (std::exception& e) {
     std::cout << e.what() << std::endl;
   }
 
-  // ERROR: not correct command name
+  std::cout << "\nRegistering existing command:\n";
   try {
-    engine.registerCommand(wrapper2, "");
+    engine.RegisterCommand(wrapper2, "command1");
   } catch (std::exception& e) {
     std::cout << e.what() << std::endl;
   }
 
   // OK
   try {
-    engine.registerCommand(wrapper2, "command2");
+    engine.RegisterCommand(wrapper2, "command2");
   } catch (std::exception& e) {
     std::cout << e.what() << std::endl;
   }
 
-  // ERROR: not correct arguments' names
+  std::cout << "\nInvalid command name:\n";
   try {
-    engine.execute("command1", {{"secondStr", 66}, {"thirdStr", 77}});
+    engine.Execute("command1", {{"something_else", 66}});
   } catch (std::exception& e) {
     std::cout << e.what() << std::endl;
   }
 
-  // OK: all args are from user
+  std::cout << "\nExecuting with default args:\n";
   try {
-    engine.execute("command1", {{"first", 15}, {"second", 23}});
+    engine.Execute("command1");
   } catch (std::exception& e) {
     std::cout << e.what() << std::endl;
   }
 
-  // ERROR: too many args
+  std::cout << "\nExecuting with custom args:\n";
   try {
-    engine.execute("command1", {{"first", 66}, {"second", 12}, {"third", 77}});
+    engine.Execute("command1", {{"first", 15}, {"second", 23}});
   } catch (std::exception& e) {
     std::cout << e.what() << std::endl;
   }
 
-  // OK: reverse args order, some args are from users, others by default
+  std::cout << "\nExecuting with partial custom args:\n";
   try {
-    engine.execute("command2", {{"firstStr", 66}, {"thirdStr", 77}});
+    engine.Execute("command2", {{"one", 66}, {"two", 77}});
   } catch (std::exception& e) {
     std::cout << e.what() << std::endl;
   }

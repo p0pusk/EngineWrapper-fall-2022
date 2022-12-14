@@ -1,44 +1,64 @@
 #include <functional>
 #include <iostream>
-#include <unordered_map>
-
-#include "args.h"
-
-using vectorArgs = std::vector<std::pair<std::string, int>>;
+#include <map>
+#include <stdexcept>
+#include <vector>
 
 class Wrapper {
  public:
   Wrapper() = delete;
 
   template <typename Subject, typename... Args>
-  Wrapper(Subject* sub, int (Subject::*method)(Args...),
-          vectorArgs const& _args) {
-    args = std::make_shared<Arguments>(_args);
-    subMethod = [this, sub, method](std::vector<int> const& funcArgs) {
-      return callMethod(sub, method, funcArgs,
-                        std::make_index_sequence<sizeof...(Args)>{});
+  Wrapper(Subject* sub, int (Subject::*func)(Args...),
+          std::map<std::string, int> const& args) {
+    default_args = args;
+    function = [this, sub, func](std::vector<int> const& func_args) {
+      return ExecuteFunction(sub, func, func_args,
+                             std::make_index_sequence<sizeof...(Args)>{});
     };
   }
 
-  int run(vectorArgs const& vec) {
-    try {
-      args->setNewArgs(vec);
-    } catch (std::exception& e) {
-      std::cout << e.what() << std::endl;
+  int Run(std::map<std::string, int> const& vec) {
+    if (!CheckArguments(vec)) {
+      throw std::runtime_error("[Wrapper]: Exception, invalid argument");
       return -1;
-    };
-    return subMethod(args->getVals());
+    }
+
+    std::vector<int> new_args;
+    for (auto const& item : default_args) {
+      auto search = vec.find(item.first);
+      if (search != vec.end()) {
+        new_args.push_back(search->second);
+      } else {
+        new_args.push_back(item.second);
+      }
+    }
+
+    return function(new_args);
   }
 
-  int run() { return subMethod(args->getDefaultVals()); }
+  int Run() {
+    std::vector<int> run_args;
+    for (auto const& item : default_args) {
+      run_args.push_back(item.second);
+    }
+    return function(run_args);
+  }
 
  private:
-  std::shared_ptr<Arguments> args = nullptr;
-  std::function<int(std::vector<int> const& args)> subMethod;
+  std::map<std::string, int> default_args;
+  std::function<int(std::vector<int> const& args)> function;
 
-  template <typename Subject, typename Method, size_t... I>
-  int callMethod(Subject* sub, Method method, std::vector<int> const& args,
-                 std::index_sequence<I...>) {
-    return (sub->*method)(args[I]...);
+  template <typename Subject, typename Function, size_t... I>
+  int ExecuteFunction(Subject* sub, Function func, std::vector<int> const& args,
+                      std::index_sequence<I...>) {
+    return (sub->*func)(args[I]...);
+  }
+
+  bool CheckArguments(std::map<std::string, int> args) {
+    for (auto const& item : args) {
+      if (!default_args.contains(item.first)) return false;
+    }
+    return true;
   }
 };
